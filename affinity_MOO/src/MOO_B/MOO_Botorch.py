@@ -128,20 +128,20 @@ def MOO_Botorch(data_path='../Data/Data_20230111.csv'):
     hvs_qnehvi.append(volume)
 
     # run N_BATCH rounds of BayesOpt after the initial random batch
-    for iteration in range(1, N_BATCH + 1):
 
-        t0 = time.monotonic()
 
-        # fit the models
-        fit_gpytorch_mll(mll_qnehvi)
+    t0 = time.monotonic()
 
-        # define the qEI and qNEI acquisition modules using a QMC sampler
+    # fit the models
+    fit_gpytorch_mll(mll_qnehvi)
 
-        qnehvi_sampler = SobolQMCNormalSampler(sample_shape=torch.Size([MC_SAMPLES]))
+    # define the qNEI acquisition modules using a QMC sampler
 
-        # optimize acquisition functions and get new observations
+    qnehvi_sampler = SobolQMCNormalSampler(sample_shape=torch.Size([MC_SAMPLES]))
+
+    # optimize acquisition functions and get new observations
 
     new_x_qnehvi = optimize_qnehvi_and_get_observation(
             model_qnehvi, train_x_qnehvi, train_obj_qnehvi, qnehvi_sampler
         )
-    print(hvs_qnehvi)
+    print(new_x_qnehvi)
