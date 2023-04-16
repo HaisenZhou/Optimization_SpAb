@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 
 def prediction_result_output(candidates)->pd.DataFrame:
+
+    '''
+    Transform the prediction results from the botorch format
+    '''
+
     output=candidates.param_df.round(4)
     prediction = pd.DataFrame(candidates.model_predictions_by_arm)
     prediction = prediction.transpose()

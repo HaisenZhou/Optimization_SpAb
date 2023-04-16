@@ -4,7 +4,7 @@ from ax.core.metric import Metric
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.service.utils.report_utils import exp_to_df
 from ax.runners.synthetic import SyntheticRunner
-
+import torch
 # Factory methods for creating multi-objective optimization model.
 from ax.modelbridge.factory import get_MOO_EHVI
 
@@ -22,41 +22,36 @@ import pandas as pd
 
 
 # Read data from CSV
-class FunctionMetric(NoisyFunctionMetric):
-    def __init__(self,num_feature) -> None:
-        super().__init__()
-        self.num_feature= num_feature
 
-class IFN_data(FunctionMetric):
-    def __init__(self) -> None:
-        super().__init__()
+
+class IFN_data(NoisyFunctionMetric):
 
     def f(self, x: np.ndarray) -> float:
-        global RawData
         activity = 0
-        print('x_IFN=',x)
+        f = open('../Data/Data_20230111.csv', 'r',encoding='utf-8-sig')
+        RawData = np.genfromtxt(f, delimiter=",")
+        num_feature = RawData.shape[1]-2
         for i in range(RawData.shape[0]):
             #label the fetched data
-            if ((RawData[i, :self.num_feature] == x).all()) and (RawData[i, self.num_feature+3] == 0):
-                RawData[i, self.num_feature+3] = 1
-                activity = RawData[i, self.num_feature+1]
-                print(activity)
+            if ((RawData[i, :num_feature] == x).all()):
+                # RawData[i, num_feature+3] = 1
+                activity = RawData[i, num_feature+1]
+                print('IFN=',activity)
         return float(activity)
     
-class GFP_data(FunctionMetric):
-    def __init__(self) -> None:
-        super().__init__()
+class GFP_data(NoisyFunctionMetric):
 
     def f(self, x: np.ndarray) -> float:
-        global RawData
         activity = 0 
-        print('x_=',x)
+        f = open('../Data/Data_20230111.csv', 'r',encoding='utf-8-sig')
+        RawData = np.genfromtxt(f, delimiter=",")
+        num_feature = RawData.shape[1]-2
         for i in range(RawData.shape[0]):
             #label the fetched data
-            if ((RawData[i, :self.num_feature] == x).all()) and (RawData[i, self.num_feature+2] == 0):
-                RawData[i, self.num_feature+2] = 1
-                activity = RawData[i, self.num_feature]
-                print(activity)
+            if ((RawData[i, :num_feature] == x).all()):
+                # RawData[i, num_feature+2] = 1
+                activity = RawData[i, num_feature]
+                print('GPF=',activity)
         return float(activity)
 
 def build_experiment(MOO_search_space,optimization_config):
@@ -69,11 +64,11 @@ def build_experiment(MOO_search_space,optimization_config):
     return experiment
 ## Initialize with selected points
 
-def initialize_experiment(experiment,num_features):
+def initialize_experiment(experiment,RawData):
     b = []
     print('Fetching data...')
     for i in range(0,RawData.shape[0]):
-        a = [Arm(parameters = {f'x{x+1}': RawData[i,x] for x in range(num_features)})]
+        a = [Arm(parameters = {f'x{x+1}': RawData[i,x] for x in range(RawData.shape[1]-2)})]
         b=b+a
     gr = GeneratorRun(b)
     experiment.new_batch_trial(generator_run=gr).run()
@@ -97,12 +92,12 @@ def define_space(num_features:int,weighted_sum:float):
         # parameters = list(GPx_search_space.parameters.values()),
         # parameters = [GPx_search_space.parameters[f'x{i}'] for i in range(1, 8)]),
         is_upper_bound = True,
-        bound = weighted_sum*1.01,
+        bound = weighted_sum*1.02,
     )
     sum_constraint_lower = SumConstraint(
         parameters = [MOO_search_space.parameters[f'x{i+1}'] for i in range(num_features)],
         is_upper_bound = False,
-        bound = weighted_sum*0.99,
+        bound = weighted_sum*0.98,
     )
     MOO_search_space.add_parameter_constraints([sum_constraint_upper])
     MOO_search_space.add_parameter_constraints([sum_constraint_lower])
@@ -112,11 +107,13 @@ def MOO(data_path='../Data/Data_20230111.csv'):
 
     f = open(data_path, 'r',encoding='utf-8-sig')
     RawData = np.genfromtxt(f, delimiter=",")
+    num_data = RawData.shape[0]
     num_features = RawData.shape[1]-2
     N_BATCH = 6
     search_space =define_space(num_features,100)
-    metric_IFN = IFN_data("IFN", [f"x{i+1}" for i in range(num_features)], noise_sd=0.0, lower_is_better=False)
-    metric_GFP = GFP_data("GFP", [f"x{i+1}" for i in range(num_features)], noise_sd=0.0, lower_is_better=True)
+    list_name = [f"x{i+1}" for i in range(num_features)]
+    metric_IFN = IFN_data("IFN", param_names=list_name, noise_sd=0, lower_is_better=False)
+    metric_GFP = GFP_data("GFP", param_names=list_name, noise_sd=0, lower_is_better=True)
     mo = MultiObjective(
         objectives=[Objective(metric=metric_IFN), Objective(metric=metric_GFP)],
     )
@@ -124,7 +121,7 @@ def MOO(data_path='../Data/Data_20230111.csv'):
     # set the reference point as (4,4)
     objective_thresholds = [
         ObjectiveThreshold(metric=metric, bound=val, relative=False)
-        for metric, val in [(metric_IFN,2),(metric_GFP,2)]
+        for metric, val in [(metric_IFN,3),(metric_GFP,3)]
     ]
 
     optimization_config = MultiObjectiveOptimizationConfig(
@@ -137,11 +134,15 @@ def MOO(data_path='../Data/Data_20230111.csv'):
         optimization_config=optimization_config,
         runner=SyntheticRunner(),
     )
-    ehvi_data = initialize_experiment(ehvi_experiment)
+    ehvi_data = initialize_experiment(ehvi_experiment,RawData)
     ehvi_hv_list = []
     ehvi_model = None
     ehvi_model = get_MOO_EHVI(
             experiment=ehvi_experiment, 
             data=ehvi_data,
+            device= torch.device("cpu")
         )
     hv = observed_hypervolume(modelbridge=ehvi_model)
+    c = ehvi_model.gen(96)
+    output = utils.prediction_result_output(c)
+    output.to_csv('test',index=False,sep=',')
