@@ -1,0 +1,8 @@
+README.md
+setup.cfg
+setup.py
+src/affinity_MOO.egg-info/PKG-INFO
+src/affinity_MOO.egg-info/SOURCES.txt
+src/affinity_MOO.egg-info/dependency_links.txt
+src/affinity_MOO.egg-info/requires.txt
+src/affinity_MOO.egg-info/top_level.txt
