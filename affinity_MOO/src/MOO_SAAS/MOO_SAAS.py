@@ -149,7 +149,7 @@ def MOO_SAAS():
             disable_progbar=False,  # Set to False to print a progress bar from MCMC  
         )
 
-    c = model.gen(1)
+    c = model.gen(96)
     output = utils.prediction_result_output(c)
     today = date.today()
     today=format(today,"%Y%m%d")
