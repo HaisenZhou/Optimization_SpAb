@@ -1,5 +1,6 @@
 import pandas as pd
 from ax import *
+from datetime import date
 
 import torch
 import numpy as np
@@ -8,7 +9,7 @@ from ax.metrics.noisy_function import GenericNoisyFunctionMetric
 from ax.service.utils.report_utils import exp_to_df
 from ax.runners.synthetic import SyntheticRunner
 
-import utils
+from MOO_SAAS import utils
 
 
 # Model registry for creating multi-objective optimization models.
@@ -17,35 +18,46 @@ from ax.modelbridge.registry import Models
 # Analysis utilities, including a method to evaluate hypervolumes
 from ax.modelbridge.modelbridge_utils import observed_hypervolume
 
-def f_IFN(x: dict) -> float:
-    print(x)
-    param_names = [f"x{i+1}" for i in range(12)]
+def f_target(x: dict) -> float:
+    '''
+    Target is the activity to be maximized.
+    First row in the data file.
+    '''
+    param_names = [f"x{i+1}" for i in range(len(x))]
     x_sorted = np.array([x[p_name] for p_name in param_names])
     activity = 0
-    f = open('../Data/Data_20230111.csv', 'r',encoding='utf-8-sig')
-    RawData = np.genfromtxt(f, delimiter=",")
-    num_feature = RawData.shape[1]-2
+    RawData,num_feature = utils.get_data()
     for i in range(RawData.shape[0]):
-        
         if ((RawData[i, :num_feature] == x_sorted).all()):
-            # RawData[i, num_feature+3] = 1
-            activity = RawData[i, num_feature+1]
-            #print(activity)
+            activity = RawData[i, num_feature]
     return float(activity)
     
-def f_GFP(x: dict) -> float:
-    param_names = [f"x{i+1}" for i in range(12)]
+def f_control(x: dict) -> float:
+    '''
+    Control is the activity to be minimized.
+    Second row in the data file.
+    '''
+    param_names = [f"x{i+1}" for i in range(len(x))]
     x_sorted = np.array([x[p_name] for p_name in param_names])
     activity = 0 
-    f = open('../Data/Data_20230111.csv', 'r',encoding='utf-8-sig')
-    RawData = np.genfromtxt(f, delimiter=",")
-    num_feature = RawData.shape[1]-2
+    RawData,num_feature = utils.get_data()
     for i in range(RawData.shape[0]):
-        
         if ((RawData[i, :num_feature] == x_sorted).all()):
-            # RawData[i, num_feature+2] = 1
-            activity = RawData[i, num_feature]
-            #print(activity)
+            activity = RawData[i, num_feature+1]
+    return float(activity)
+
+def f_blank(x: dict) -> float:
+    '''
+    Blank is the activity to be minimized.
+    Thrid row in the data file.
+    '''
+    param_names = [f"x{i+1}" for i in range(len(x))]
+    x_sorted = np.array([x[p_name] for p_name in param_names])
+    activity = 0 
+    RawData,num_feature = utils.get_data()
+    for i in range(RawData.shape[0]):
+        if ((RawData[i, :num_feature] == x_sorted).all()):
+            activity = RawData[i, num_feature+2]
     return float(activity)
 
 def build_experiment(MOO_search_space,optimization_config):
@@ -62,10 +74,11 @@ def initialize_experiment(experiment,RawData):
     b = []
     print('Fetching data...')
     for i in range(0,RawData.shape[0]):
-        a = [Arm(parameters = {f'x{x+1}': RawData[i,x] for x in range(RawData.shape[1]-2)})]
+        a = [Arm(parameters = {f'x{x+1}': RawData[i,x] for x in range(RawData.shape[1]-3)})]
         b=b+a
     gr = GeneratorRun(b)
     experiment.new_batch_trial(generator_run=gr).run()
+    print('Done!')
     return experiment.fetch_data()
 
 def define_space(num_features:int,weighted_sum:float):
@@ -97,25 +110,24 @@ def define_space(num_features:int,weighted_sum:float):
     MOO_search_space.add_parameter_constraints([sum_constraint_lower])
     return MOO_search_space
 
-def MOO_SAAS(data_path='../Data/Data_20230111.csv'):
+def MOO_SAAS():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    f = open(data_path, 'r',encoding='utf-8-sig')
-    RawData = np.genfromtxt(f, delimiter=",")
-    num_data = RawData.shape[0]
-    num_features = RawData.shape[1]-2
+    RawData,num_features = utils.get_data()
+    print(num_features)
     N_BATCH = 6
     search_space =define_space(num_features,100)
     param_names = [f"x{i+1}" for i in range(num_features)]
-    metric_IFN = GenericNoisyFunctionMetric("IFN", f=f_IFN, noise_sd=0, lower_is_better=False)
-    metric_GFP = GenericNoisyFunctionMetric("GFP", f=f_GFP, noise_sd=0, lower_is_better=True)
+    metric_target = GenericNoisyFunctionMetric("target", f=f_target, noise_sd=0.1, lower_is_better=False)
+    metric_control = GenericNoisyFunctionMetric("control", f=f_control, noise_sd=0.1, lower_is_better=True)
+    metric_blank = GenericNoisyFunctionMetric("blank", f=f_blank, noise_sd=0.1, lower_is_better=True)
     mo = MultiObjective(
-        objectives=[Objective(metric=metric_IFN), Objective(metric=metric_GFP)],
+        objectives=[Objective(metric=metric_target), Objective(metric=metric_control), Objective(metric=metric_blank)],
     )
 
-    # set the reference point as (4,4)
+    # set the reference point as (3.2,3.2,3.2)
     objective_thresholds = [
         ObjectiveThreshold(metric=metric, bound=val, relative=False)
-        for metric, val in [(metric_IFN,3),(metric_GFP,3)]
+        for metric, val in [(metric_target,3.2),(metric_control,3.2),(metric_blank,3.2)]
     ]
 
     optimization_config = MultiObjectiveOptimizationConfig(
@@ -137,6 +149,8 @@ def MOO_SAAS(data_path='../Data/Data_20230111.csv'):
             disable_progbar=False,  # Set to False to print a progress bar from MCMC  
         )
 
-    c = model.gen(96)
+    c = model.gen(1)
     output = utils.prediction_result_output(c)
-    output.to_csv('../Data/Proposed/20230415.csv',index=False,sep=',')
+    today = date.today()
+    today=format(today,"%Y%m%d")
+    output.to_csv(f'../Data/Proposed/{today}.csv',index=False,sep=',')
