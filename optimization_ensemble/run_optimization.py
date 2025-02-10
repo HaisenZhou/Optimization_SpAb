@@ -25,8 +25,8 @@ def run_optimization (
       
      # Read data from random_data_dir and calculated average of the 9th and 10th column, random_data_dir is the path to the file containing all the randomly sampled data
     random_data = np.genfromtxt(random_data_dir, delimiter=',', encoding='utf-8-sig')
-    target_mean = np.mean(random_data[:, 8])  # average of the 9th column
-    control_mean = np.mean(random_data[:, 9])  # average of the 10th column
+    target_mean = np.mean(random_data[:, 8])  
+    control_mean = np.mean(random_data[:, 9]) 
 
     # read the data from the all_data_dir, remember to remove the header, all_data_dir is the path to the file containing all the data prevously collected
     raw_data = np.genfromtxt(all_data_dir, delimiter=',',encoding='utf-8-sig')
@@ -61,9 +61,9 @@ def run_optimization (
     np.savetxt(output_dir, all_candidates, delimiter=',',fmt='%.3f')
 
 run_optimization(
-        all_data_dir = Path('../Data/Data_TNF/All_data_240509.csv'),
-        last_iteration_data_dir= Path('../Data/Data_TNF/N7P102.csv'),
-        random_data_dir = Path('../Data/Data_TNF/Random_data_240509.csv'),
+        all_data_dir = Path('../Data/Data_TNF/All_data_example.csv'),
+        last_iteration_data_dir= Path('../Data/Data_TNF/Last_iteration_example.csv'),
+        random_data_dir = Path('../Data/Data_TNF/Random_data_example.csv'),
         num_BO_candidates = 1,
         num_GA_candidates = 1,
         num_random_candidates = 1,  
