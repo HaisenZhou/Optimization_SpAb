@@ -85,7 +85,6 @@ class constraint_genetic_algorithm:
             # randomly decide the number of genes from parent1 
             num_genes_parent1 = np.random.randint(1, self.x.shape[1])
             # randomly select genes to pass to offspring based on the frequence
-            #print(parents[parent1_idx])
             genes_parent1 = np.random.choice(np.arange(parents.shape[1]), p=parents[parent1_idx],size=num_genes_parent1)
             genes_parent2 = np.random.choice(np.arange(parents.shape[1]), p=parents[parent2_idx],size=self.x.shape[1]-num_genes_parent1)
             # pick the genes from parent1 and parent2 and put them into offspring
@@ -125,7 +124,6 @@ class constraint_genetic_algorithm:
                     mutated_offspring[idx] = mutated_offspring[idx]/mutated_offspring[idx].sum()
                     if self.is_candidate_valid(mutated_offspring[idx]):
                         break
-        #mutated_offspring = normalize_data(mutated_offspring.round(2))
         print("mutation complete")
         return mutated_offspring.round(2)
         
@@ -155,7 +153,6 @@ class constraint_genetic_algorithm:
                 if self.is_candidate_valid(mutated_offspring[idx]):
                     break
                 
-        #mutated_offspring = normalize_data(mutated_offspring.round(2))
         print("gen_switch_mutation complete")
         return mutated_offspring.round(2)
     
@@ -182,8 +179,7 @@ class constraint_genetic_algorithm:
 
         np.random.seed(42)
 
-        # 1/10 of the population will be selected as for top-k parents
-        # k = int(self.x.shape[0] * self.top_k_fraction)
+        # top-k parents
         k = 10
         
         offspring_size = self.num_candidates
@@ -196,9 +192,6 @@ class constraint_genetic_algorithm:
 
         # select top-k parents from parents pool
         selected_parents_idx = self.selection(fitness, k)
-        #print(self.fitness[selected_parents_idx])
-        #while True:
-        # crossover and mutation
         crossover_offspring = self.crossover(population[selected_parents_idx], offspring_size_crossover_mutation)
         mutated_crossover_offspring = self.composition_mutation(crossover_offspring)
         mutated_crossover_offspring = self.gen_switch_mutation(mutated_crossover_offspring)
@@ -210,11 +203,6 @@ class constraint_genetic_algorithm:
         
         # combine the offspring from crossover and direct mutation
         mutated_offspring = np.vstack((mutated_crossover_offspring, direct_mutation_offspring))
-            #for i in range(mutated_offspring.shape[0]):
-                #if not self.is_candidate_valid(mutated_offspring[i]):
-                    #break
-            #if i == (mutated_offspring.shape[0]-1):
-                #break
 
 
         for idx in range(mutated_offspring.shape[0]):
@@ -238,7 +226,6 @@ class constraint_genetic_algorithm:
                 else:
                     break  # Break the while loop if the offspring is not similar to any previous candidates
 
-        #population_next = np.vstack((population[self.selection(fitness, self.top_k_number)], mutated_offspring)).round(2)
         population_next = mutated_offspring.round(2) 
         population_next = normalize_data(population_next)
         print("propose_new_candidates complete")
