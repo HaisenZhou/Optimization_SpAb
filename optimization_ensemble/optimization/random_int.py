@@ -45,22 +45,16 @@ class random_int:
             num = random.randint(1, total)
             l = self.num2Comb(num, n, m, [])
             ans = self.comb2List(l, n, m)
-          
             if ans[4] < 40 and sum(ans[:4]) + ans[6] > ans[5] + ans[7]:  
                 return ans
         
-        # num = random.randint(1, total)
-        # l = self.num2Comb(num, n, m, [])
-        # ans = self.comb2List(l, n, m)
-        # return ans
-    
+ 
     def propose_new_candidates(self):
         # output a list of 100 solutions
         l = []
         for i in range(self.num_offspring):
             ans = self.genRandom(8, 100)
             l.append(ans)
-            #print(ans, sum(ans))
         l = np.array(l)
         l = l / l.sum(axis=1, keepdims=True)
         return l
