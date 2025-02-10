@@ -138,7 +138,6 @@ class GP_qNEI:
                     best_f=self.y.max()
                 )
         print('Proposing new candidates...')
-        #new_x = self.optimize_discrete_EI(EI)
         new_x = self.optimize_acqf_and_get_observation(qNEI,bounds)
         # transform the new_x to numpy array
         new_x = new_x.round(2)
