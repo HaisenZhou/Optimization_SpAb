@@ -39,20 +39,21 @@ The input data should be formatted as:
 - Target protein ELISA results
 - Control protein ELISA results
 
-### 2. **Running Optimization**
-Run the optimization script:
+### 2. **Environment Setup**
+Create an environment using the provided script:
 ```bash
-python run_optimization.py
+bash create_env.sh
 ```
-This script will execute Bayesian Optimization and Genetic Algorithm iterations to refine SpAb compositions.
 
-### 3. **Output & Analysis**
-The optimization results will be saved in the output directory
+### 3. **Running Optimization**
+Specify the parameters in `run_optimization.py` and run the optimization script:
+```bash
+bash run_optimization.sh
+```
+This will execute the Bayesian Optimization and Genetic Algorithm iterations to refine SpAb compositions.
 
-## Contact
-- **Author**: Haisen Zhou
-- **Email**: [Zhouhaisen@pku.edu.cn]
-- **GitHub**: [@HaisenZhou](https://github.com/HaisenZhou)
+### 4. **Output & Analysis**
+The optimization results will be saved in the output directory.
 
 
 For more details, please refer to our research article: *Data-driven Design of Random Heteropolypeptides as Synthetic Polyclonal Antibodies*.
