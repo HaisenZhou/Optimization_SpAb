@@ -7,25 +7,7 @@
 - **Data-driven optimization** of random heteropolypeptide compositions
 - **Synthetic polyclonal antibody (SpAb) design** for selective antigen recognition
 - **Integration of Bayesian Optimization (BO) and Genetic Algorithm (GA)** for enhanced discovery
-- **High-throughput data processing and screening**
-- **Flexible scoring system** for affinity and selectivity tuning
 
-## Requirements
-- **Python** 3.7+
-- Required dependencies:
-  - NumPy
-  - Pandas
-  - Scikit-learn
-  - BioPython
-  - PyTorch
-
-## Installation
-Clone the repository and install dependencies:
-```bash
-git clone https://github.com/HaisenZhou/Optimization_SpAb.git
-cd Optimization_SpAb
-pip install -r requirements.txt
-```
 
 ## Usage
 ### 1. **Data Preparation**
@@ -42,13 +24,15 @@ The input data should be formatted as:
 ### 2. **Environment Setup**
 Create an environment using the provided script:
 ```bash
-bash create_env.sh
+conda create --name affinity_optimization python=3.10
+conda activate affinity_optimization
+pip install botorch pandas quantecon
 ```
 
 ### 3. **Running Optimization**
 Specify the parameters in `run_optimization.py` and run the optimization script:
 ```bash
-bash run_optimization.sh
+python run_optimization.py
 ```
 This will execute the Bayesian Optimization and Genetic Algorithm iterations to refine SpAb compositions.
 
