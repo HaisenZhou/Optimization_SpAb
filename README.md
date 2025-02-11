@@ -26,6 +26,7 @@ Create an environment using the provided script:
 ```bash
 conda create --name affinity_optimization python=3.10
 conda activate affinity_optimization
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 pip install botorch pandas quantecon
 ```
 
